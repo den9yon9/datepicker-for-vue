@@ -1,8 +1,22 @@
 <style scoped>
 .datepicker {
+  position: relative;
+  width: 250px;
+  height: 40px;
+  border: solid 1px #eee;
+  align-items: center;
+  justify-content: space-around;
+  display: flex;
+}
+
+.calendar {
+  position: absolute;
+  top: 100%;
+  left: 0;
   font-size: 18px;
   width: 280px;
   box-shadow: 0 0 4px #00000055;
+  transform: translateY(10px);
 }
 
 .year-month {
@@ -66,6 +80,7 @@
 
 
 
+
 /*隐藏属于上月与下月的格子*/
 
 .hide {
@@ -91,20 +106,6 @@
   transition: all 0.3s;
 }
 
-.notice {
-  font-size: 12px;
-}
-
-.belong.pre,
-.belong.next {
-  color: #deefff;
-}
-
-.active.pre,
-.active.next {
-  color: #fff;
-}
-
 .active {
   background-color: #585fee;
   color: #fff;
@@ -116,38 +117,96 @@
   align-items: center;
 }
 
+.notice {
+  font-size: 12px;
+}
+
+
+.belong.pre,
+.belong.next {
+  color: #deefff;
+}
+
+.active.pre,
+.active.next {
+  color: #fff;
+}
+
 .disable.active,
 .disable.belong {
   color: #aaa;
 }
 
+.slide-enter {
+  transform: translateY(0px);
+  transition: all 0.15s;
+  opacity: 0;
+}
+
+.slide-enter-active,
+.slide-leave {
+  transition: all 0.15s
+}
+
+.slide-leave-active {
+  transform: translateY(0px);
+  opacity: 0;
+  transition: all 0.15s
+}
+
 </style>
 <template>
-  <div class="datepicker">
-    <div class="year-month">
-      <a class="pre-month" @click="getPreMonth"><img src="../assets/arrow.png"></a>
-      <div class="year">{{year}}年</div>
-      <div class="month">{{month}}月</div>
-      <a class="next-month" @click="getNextMonth"><img src="../assets/arrow.png"></a>
-    </div>
-    <div class="days-dates">
-      <div class="days">
-        <div class="day" v-for="day of days">{{day}}</div>
-      </div>
-      <div class="dates">
-        <div class="date" v-for="date of dates" :class="getDateClass(date)" @click="getDate(date)">
-          <span>{{date.date}}</span>
-          <div class="notice" v-if="format(date.fullDate)==format(startdate)&&range">{{range.start_notice||'开始'}}</div>
-          <div class="notice" v-if="format(date.fullDate)==format(enddate)&&range">{{range.end_notice||'结束'}}</div>
+  <div class="datepicker" @click.stop="show=!show">
+    <span>{{format(startdate)}}</span>
+    <span v-if="value[1]!==undefined">~</span>
+    <span v-if="value[1]!==undefined">{{format(enddate)}}</span>
+    <transition name="slide">
+      <div class="calendar" v-show="show" @click.stop>
+        <div class="year-month">
+          <a class="pre-month" @click="getPreMonth"><img src="../assets/arrow.png"></a>
+          <div class="year">{{year}}年</div>
+          <div class="month">{{month}}月</div>
+          <a class="next-month" @click="getNextMonth"><img src="../assets/arrow.png"></a>
+        </div>
+        <div class="days-dates">
+          <div class="days">
+            <div class="day" v-for="day of days">{{day}}</div>
+          </div>
+          <div class="dates">
+            <div class="date" v-for="date of dates" :class="getDateClass(date)" @click="getDate(date)">
+              <span>{{date.date}}</span>
+              <div class="notice" v-if="format(date.fullDate)==format(startdate)&&value[1]!==undefined">{{start_notice||'开始'}}</div>
+              <div class="notice" v-if="format(date.fullDate)==format(enddate)&&value[1]!==undefined">{{end_notice||'结束'}}</div>
+            </div>
+          </div>
         </div>
       </div>
-    </div>
+    </transition>
   </div>
 </template>
 <script>
 import { timeFormat } from '../utils.js'
 export default {
-  props: ['hiderestdate', 'range', 'disable', 'value'],
+  props: {
+    // 是否隐藏其他月份的日子
+    hiderestdate: {
+      default: false
+    },
+    // 双选模式
+    value: {
+      type: Array
+    },
+    // 禁用日期范围
+    disable: {
+      type: Object
+    },
+    start_notice: {
+      type: String
+    },
+    end_notice: {
+      type: String
+    }
+  },
   data() {
     return {
       days: ['日', '一', '二', '三', '四', '五', '六'],
@@ -155,21 +214,28 @@ export default {
       year: 0,
       month: 0,
       date: 0,
-      startdate: new Date(0),
-      enddate: new Date(0),
-      cnt: 0
+      startdate: '',
+      enddate: '',
+      cnt: 0,
+      show: false
     }
   },
 
   mounted() {
-    if (this.range) {
-      this.startdate = this.range.startdate && new Date(this.range.startdate) || new Date()
-      this.enddate = this.range.enddate && new Date(this.range.enddate) || new Date(new Date().getTime() + 24 * 60 * 60 * 1000)
-    } else {
-      if (this.value) {
-        this.startdate = new Date(this.value)
+    window.addEventListener('click', e => {
+      if (this.show) {
+        this.show = false
       }
+    })
+
+    if (this.value[0] !== undefined) {
+      this.startdate = new Date(this.value[0]) || ''
     }
+
+    if (this.value[1] !== undefined) {
+      this.enddate = new Date(this.value[1]) || ''
+    }
+
 
     this.year = this.startdate.getFullYear()
     this.month = this.startdate.getMonth() + 1
@@ -269,28 +335,26 @@ export default {
     },
     // 单选双选模式逻辑
     setDate() {
-      if (!this.range) {
+      if (this.value[1]===undefined) {
         this.startdate = new Date([this.year, this.month, this.date].join('-'))
-        this.$emit('datechange', this.startdate)
+        this.$emit('input', [this.startdate])
+        this.show = false
       } else {
         if (!(this.cnt % 2)) {
           // 用户选择两个时间点，根据两个时间点的早晚决定那一天是开始哪一天是结束
           let temp = new Date([this.year, this.month, this.date].join('-'))
           if (temp > this.startdate) {
             this.enddate = temp
-            this.$emit('enddate', this.enddate)
           } else {
             this.enddate = this.startdate
             this.startdate = temp
-            this.$emit('startdate', this.startdate)
-            this.$emit('enddate', this.enddate)
           }
+          this.show = false
         } else {
-          this.enddate = new Date(0)
-          this.$emit('enddate', '')
+          this.enddate = ''
           this.startdate = new Date([this.year, this.month, this.date].join('-'))
-          this.$emit('startdate', this.startdate)
         }
+        this.$emit('input', [this.startdate, this.enddate])
       }
     },
 
@@ -311,7 +375,7 @@ export default {
       let fullDate = timeFormat(date.fullDate)
       let startdate = timeFormat(this.startdate)
       let enddate = timeFormat(this.enddate)
-      if (this.range) {
+      if (this.value[1]) {
         return fullDate == enddate || fullDate == startdate
       } else {
         return fullDate == startdate
@@ -320,7 +384,7 @@ export default {
 
     // 判断格子是否在被选中的日子之间
     hasBelongClass(date) {
-      return this.range ? date.fullDate.getTime() > this.startdate.getTime() && date.fullDate.getTime() < this.enddate.getTime() : false
+      return this.value[1] ? date.fullDate.getTime() > (this.startdate && this.startdate.getTime()) && (date.fullDate.getTime() < this.enddate && this.enddate.getTime()) : false
     },
 
     // 是否隐藏不属于本月的日子

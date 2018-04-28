@@ -4,24 +4,29 @@
   }
 
   function timeFormat(date, format) {
-    let year = date.getFullYear()
-    let month = leftPad(date.getMonth() + 1)
-    let day = leftPad(date.getDate())
+    if (date instanceof Date) {
+      let year = date.getFullYear()
+      let month = leftPad(date.getMonth() + 1)
+      let day = leftPad(date.getDate())
 
-    let hours = leftPad(date.getHours())
-    let minute = leftPad(date.getMinutes())
-    let second = leftPad(date.getSeconds())
+      let hours = leftPad(date.getHours())
+      let minute = leftPad(date.getMinutes())
+      let second = leftPad(date.getSeconds())
 
-    if (format == 'date' || !format) {
-      // xxxx-xx-xx
-      return `${year}-${month}-${day}`
-    } else if (format == 'time') {
-      // xx:xx:xx
-      return `${hours}:${minute}:${second}`
-    } else if (format == 'full') {
-      // xxxx-xx-xx xx:xx:xx
-      return `${year}-${month}-${day} ${hours}:${minute}:${second}`
+      if (format == 'date' || !format) {
+        // xxxx-xx-xx
+        return `${year}-${month}-${day}`
+      } else if (format == 'time') {
+        // xx:xx:xx
+        return `${hours}:${minute}:${second}`
+      } else if (format == 'full') {
+        // xxxx-xx-xx xx:xx:xx
+        return `${year}-${month}-${day} ${hours}:${minute}:${second}`
+      }
+    } else {
+      return ''
     }
+
   }
 
   function ms2Hour(ms) {
@@ -35,7 +40,7 @@
     return `${hours}:${minute}:${second}`
   }
 
-  function string2Date(date){
+  function string2Date(date) {
     return new Date(date)
   }
 

@@ -1,5 +1,6 @@
 <style scoped>
 .datepicker {
+  background-color: #fff;
   position: relative;
   width: 250px;
   height: 40px;
@@ -10,6 +11,7 @@
 }
 
 .calendar {
+  z-index: 1000;    
   position: absolute;
   top: 100%;
   left: 0;
@@ -21,6 +23,7 @@
 
 .year-month {
   display: flex;
+  background-color: #fff;
   justify-content: center;
   flex-shrink: 0;
   color: #666;
@@ -29,26 +32,24 @@
 }
 
 .next-month {
-  transform: rotate(90deg);
-  margin-left: 20px;
+  margin-left: 40px;
   cursor: pointer;
+  font-weight: 600;
+  color: #aaa;
 }
 
 .pre-month {
-  transform: rotate(-90deg);
-  margin-right: 20px;
+  margin-right: 40px;
   cursor: pointer;
+  font-weight: 600;
+  color: #aaa;
 }
-
-.year-month img {
-  width: 20px;
-}
-
 
 .days {
   box-sizing: border-box;
   border-bottom: solid 1px #f1f1f1;
   display: flex;
+  background-color: #fff;
 }
 
 .day {
@@ -63,6 +64,7 @@
 .dates {
   display: flex;
   flex-wrap: wrap;
+  background-color: #fff;
 }
 
 .date {
@@ -78,11 +80,7 @@
   box-sizing: border-box;
 }
 
-
-
-
 /*隐藏属于上月与下月的格子*/
-
 .hide {
   pointer-events: none;
   opacity: 0
@@ -157,16 +155,16 @@
 </style>
 <template>
   <div class="datepicker" @click.stop="show=!show">
-    <span>{{format(startdate)}}</span>
+    <span>{{timeFormat(startdate)}}</span>
     <span v-if="value[1]!==undefined">~</span>
-    <span v-if="value[1]!==undefined">{{format(enddate)}}</span>
+    <span v-if="value[1]!==undefined">{{timeFormat(enddate)}}</span>
     <transition name="slide">
       <div class="calendar" v-show="show" @click.stop>
         <div class="year-month">
-          <a class="pre-month" @click="getPreMonth"><img src="../assets/arrow.png"></a>
+          <a class="pre-month" @click="getPreMonth"><</a>
           <div class="year">{{year}}年</div>
           <div class="month">{{month}}月</div>
-          <a class="next-month" @click="getNextMonth"><img src="../assets/arrow.png"></a>
+          <a class="next-month" @click="getNextMonth">></a>
         </div>
         <div class="days-dates">
           <div class="days">
@@ -175,8 +173,8 @@
           <div class="dates">
             <div class="date" v-for="date of dates" :class="getDateClass(date)" @click="getDate(date)">
               <span>{{date.date}}</span>
-              <div class="notice" v-if="format(date.fullDate)==format(startdate)&&value[1]!==undefined">{{start_notice||'开始'}}</div>
-              <div class="notice" v-if="format(date.fullDate)==format(enddate)&&value[1]!==undefined">{{end_notice||'结束'}}</div>
+              <div class="notice" v-if="timeFormat(date.fullDate)==timeFormat(startdate)&&value[1]!==undefined">{{notice1||'开始'}}</div>
+              <div class="notice" v-if="timeFormat(date.fullDate)==timeFormat(enddate)&&value[1]!==undefined">{{notice2||'结束'}}</div>
             </div>
           </div>
         </div>
@@ -185,7 +183,6 @@
   </div>
 </template>
 <script>
-import { timeFormat } from '../utils.js'
 export default {
   props: {
     // 是否隐藏其他月份的日子
@@ -200,10 +197,10 @@ export default {
     disable: {
       type: Object
     },
-    start_notice: {
+    notice1: {
       type: String
     },
-    end_notice: {
+    notice2: {
       type: String
     }
   },
@@ -243,8 +240,24 @@ export default {
   },
 
   methods: {
-    format(date) {
-      return timeFormat(date)
+    timeFormat(date) {
+      function leftPad(arg) {
+        arg = arg.toString()
+        return arg[1] ? arg : '0' + arg
+      }
+
+      if (date instanceof Date) {
+        let year = date.getFullYear()
+        let month = leftPad(date.getMonth() + 1)
+        let day = leftPad(date.getDate())
+
+        let hours = leftPad(date.getHours())
+        let minute = leftPad(date.getMinutes())
+        let second = leftPad(date.getSeconds())
+        return `${year}-${month}-${day}`
+      } else {
+        return ''
+      }
     },
     // 判断是否是闰年
     isLeapYear: year => year % 4 == 0 || year % 100 == 0 && year % 400 == 0,
@@ -313,7 +326,7 @@ export default {
       if (date.disable) return;
 
       // 离店日期与入住日期不能在同一天
-      if (timeFormat(date.fullDate) == timeFormat(this.startdate)) return;
+      if (this.timeFormat(date.fullDate) == this.timeFormat(this.startdate)) return;
       this.date = date.date
       if (date.month == 'pre') {
         if (this.month == 1) {
@@ -335,7 +348,7 @@ export default {
     },
     // 单选双选模式逻辑
     setDate() {
-      if (this.value[1]===undefined) {
+      if (this.value[1] === undefined) {
         this.startdate = new Date([this.year, this.month, this.date].join('-'))
         this.$emit('input', [this.startdate])
         this.show = false
@@ -349,7 +362,7 @@ export default {
             this.enddate = this.startdate
             this.startdate = temp
           }
-          this.show = false
+          // this.show = false
         } else {
           this.enddate = ''
           this.startdate = new Date([this.year, this.month, this.date].join('-'))
@@ -372,9 +385,9 @@ export default {
 
     // 判断格子中的日子是否被选中了以应用选中的样式
     hasActiveClass(date) {
-      let fullDate = timeFormat(date.fullDate)
-      let startdate = timeFormat(this.startdate)
-      let enddate = timeFormat(this.enddate)
+      let fullDate = this.timeFormat(date.fullDate)
+      let startdate = this.timeFormat(this.startdate)
+      let enddate = this.timeFormat(this.enddate)
       if (this.value[1]) {
         return fullDate == enddate || fullDate == startdate
       } else {

@@ -9,7 +9,7 @@ npm install datepicker-for-vue --save
 ```
 
 ``` html
-    <Datepicker v-model="value" :disable="disable" start_notice="start_notice" end_notice="end_notice"></Datepicker>
+    <Datepicker v-model="value" :disable="disable" notice1="notice1" notice2="notice2"></Datepicker>
 ```
 
 ``` javascript
@@ -23,8 +23,8 @@ npm install datepicker-for-vue --save
                     from: '2018-04-28',
                     to: '2018-04-01'
                 },
-                start_notice: 'come', 
-                end_notice: 'go',
+                notice1: 'come', 
+                notice2: 'go',
             }
         }
     }

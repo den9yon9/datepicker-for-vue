@@ -8,10 +8,11 @@
   align-items: center;
   justify-content: space-around;
   display: flex;
+  user-select: none;
 }
 
 .calendar {
-  z-index: 1000;    
+  z-index: 1000;
   position: absolute;
   top: 100%;
   left: 0;
@@ -24,25 +25,18 @@
 .year-month {
   display: flex;
   background-color: #fff;
-  justify-content: center;
+  justify-content: space-around;
   flex-shrink: 0;
   color: #666;
   height: 40px;
   align-items: center;
 }
 
-.next-month {
-  margin-left: 40px;
+.pointer {
   cursor: pointer;
   font-weight: 600;
   color: #aaa;
-}
-
-.pre-month {
-  margin-right: 40px;
-  cursor: pointer;
-  font-weight: 600;
-  color: #aaa;
+  font-size: 14px;
 }
 
 .days {
@@ -80,7 +74,10 @@
   box-sizing: border-box;
 }
 
+
+
 /*隐藏属于上月与下月的格子*/
+
 .hide {
   pointer-events: none;
   opacity: 0
@@ -161,10 +158,11 @@
     <transition name="slide">
       <div class="calendar" v-show="show" @click.stop>
         <div class="year-month">
-          <a class="pre-month" @click="getPreMonth"><</a>
-          <div class="year">{{year}}年</div>
-          <div class="month">{{month}}月</div>
-          <a class="next-month" @click="getNextMonth">></a>
+          <a class="pre-year pointer" @click="getPreYear"><<</a>
+          <a class="pre-month pointer" @click="getPreMonth"><</a>
+          <div>{{year}}年{{month}}月</div>
+          <a class="next-month pointer" @click="getNextMonth">></a>
+          <a class="next-year pointer" @click="getNextYear">>></a>
         </div>
         <div class="days-dates">
           <div class="days">
@@ -225,21 +223,29 @@ export default {
       }
     })
 
-    if (this.value[0] !== undefined) {
-      this.startdate = new Date(this.value[0]) || ''
+    this.initDate()
+  },
+
+  watch: {
+    value() {
+      this.initDate()
     }
-
-    if (this.value[1] !== undefined) {
-      this.enddate = new Date(this.value[1]) || ''
-    }
-
-
-    this.year = this.startdate.getFullYear()
-    this.month = this.startdate.getMonth() + 1
-    this.date = this.startdate.getDate()
   },
 
   methods: {
+    initDate() {
+      if (this.value[0] !== undefined) {
+        this.startdate = new Date(this.value[0])
+      }
+
+      if (this.value[1] !== undefined && this.value[1] !== '') {
+        this.enddate = new Date(this.value[1])
+      }
+
+      this.year = this.startdate.getFullYear()
+      this.month = this.startdate.getMonth() + 1
+      this.date = this.startdate.getDate()
+    },
     timeFormat(date) {
       function leftPad(arg) {
         arg = arg.toString()
@@ -362,7 +368,7 @@ export default {
             this.enddate = this.startdate
             this.startdate = temp
           }
-          // this.show = false
+          this.show = false
         } else {
           this.enddate = ''
           this.startdate = new Date([this.year, this.month, this.date].join('-'))
@@ -419,6 +425,16 @@ export default {
       if (this.month == 1) {
         this.year++
       }
+    },
+
+    // 向上翻年
+    getPreYear(){
+      this.year --
+    },
+
+    // 向下翻年
+    getNextYear(){
+      this.year ++ 
     }
   },
 
